@@ -30,7 +30,7 @@ namespace GeoMesh
                     : 1;
                 
                 g.DrawLine(
-                    new Pen(Color.HotPink, penWidth),
+                    new Pen(Color.FromArgb(180, Color.HotPink), penWidth),
                     0, 
                     -Overlay.Control.Height / 2, 
                     0,
@@ -62,9 +62,8 @@ namespace GeoMesh
         private void DrawMeshCircle(int radius, double scale, float penWidth, IGraphics g)
         {
             var scaledRadius = radius * (float) scale;
-
             g.DrawEllipse(
-                new Pen(Color.HotPink, penWidth),
+                new Pen(Color.FromArgb(180, Color.HotPink), penWidth),
                 -scaledRadius, -scaledRadius,
                 Math.Abs(scaledRadius) * 2, Math.Abs(scaledRadius) * 2);
         }
