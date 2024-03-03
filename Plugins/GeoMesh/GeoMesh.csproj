@@ -41,13 +41,13 @@
           <HintPath>..\..\..\..\.nuget\packages\microsoft.netframework.referenceassemblies.net472\1.0.2\build\.NETFramework\v4.7.2\System.Drawing.dll</HintPath>
         </Reference>
         <Reference Include="System.Drawing.Common">
-          <HintPath>..\..\..\..\.nuget\packages\system.drawing.common\4.7.2\ref\net461\System.Drawing.Common.dll</HintPath>
+          <HintPath>..\..\..\.nuget\packages\system.drawing.common\4.7.2\ref\net461\System.Drawing.Common.dll</HintPath>
         </Reference>
         <Reference Include="System.Xml"/>
     </ItemGroup>
     <ItemGroup>
         <Compile Include="GeoMeshPlugin.cs" />
-        <Compile Include="GMapMarkerGeoMesh.cs" />
+        <Compile Include="GMapMarkerGeoMesh2.cs" />
         <Compile Include="Properties\AssemblyInfo.cs"/>
     </ItemGroup>
 

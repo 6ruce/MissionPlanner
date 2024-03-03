@@ -1,8 +1,5 @@
-﻿using System;
-using System.Linq;
-using GMap.NET;
+﻿using System.Linq;
 using GMap.NET.WindowsForms;
-using MissionPlanner;
 using MissionPlanner.GCSViews;
 
 namespace GeoMesh
@@ -35,7 +32,7 @@ namespace GeoMesh
             var meshOverlay = Host.FDGMapControl.Overlays.FirstOrDefault(o => o.Id == "positions");
             
             // Thing that know how to render the mesh itself
-            var geoMeshMarker = new GMapMarkerGeoMesh(Host.cs.Location, Host.cs.groundcourse);
+            var geoMeshMarker = new GMapMarkerGeoMesh2(Host.cs.Location, Host.cs.groundcourse);
             
             // Marker should be re-added each iteration to update its position
             meshOverlay?.Markers.Clear();
