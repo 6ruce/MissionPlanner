@@ -50,6 +50,7 @@
         <Compile Include="GeoMeshSettings.cs" />
         <Compile Include="GMapMarkerGeoMesh.cs" />
         <Compile Include="Properties\AssemblyInfo.cs"/>
+        <Compile Include="Subscriptions.cs" />
     </ItemGroup>
 
     <ItemGroup>

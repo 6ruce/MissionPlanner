@@ -61,6 +61,7 @@ namespace GeoMesh
 
         public override bool Exit()
         {
+            _geoMeshSettings.Dispose();
             return true;
         }
     }
