@@ -44,10 +44,10 @@ namespace GeoMesh
             {
                 // Each fifth circle should be bold
                 var penWidth = i % 5 == 0
-                    ? 5
-                    : 3;
+                    ? 3
+                    : 1;
                 
-                DrawMeshCircle(unitSize.unitSizeInPixels * i, 1, penWidth, g);
+                DrawMeshCircle(Convert.ToInt32(unitSize.unitSizeInPixels * i), penWidth, g);
             }
             
             g.TranslateTransform(LocalPosition.X, LocalPosition.Y);
@@ -56,62 +56,52 @@ namespace GeoMesh
             
             g.DrawString(
                 $"Current unit size: {unitSize.unitSize} meters",
-                new Font("Arial", 16),
+                new Font("Arial", 12),
                 new SolidBrush(_meshColor),
                 0,
                 0);
         }
 
-        private void DrawMeshCircle(int radius, double scale, float penWidth, IGraphics g)
+        private void DrawMeshCircle(int radius, float penWidth, IGraphics g)
         {
-            var scaledRadius = radius * (float) scale;
             g.DrawEllipse(
                 new Pen(Color.FromArgb(255, _meshColor), penWidth),
-                -scaledRadius, -scaledRadius,
-                Math.Abs(scaledRadius) * 2, Math.Abs(scaledRadius) * 2);
+                -radius, -radius,
+                Math.Abs(radius) * 2, Math.Abs(radius) * 2);
         }
 
-        private (double unitSize, int unitSizeInPixels) CalculateUnitSize()
+        private (double unitSize, double unitSizeInPixels) CalculateUnitSize()
         {
-            //calculate visible distance in meters on screen between lowest and highest point
+            //calculate visible distance in meters on screen between center bottom and center top point
             double heightInMeters =
                 (Overlay.Control.MapProvider.Projection.GetDistance(Overlay.Control.FromLocalToLatLng(Overlay.Control.Width / 2, 0),
                     Overlay.Control.FromLocalToLatLng(Overlay.Control.Width / 2, Overlay.Control.Height)) * 1000.0);
 
-            // calculate the desired unit size;
+            // calculate the desired unit size - distance between two adjacent circles if we want to have ten circles
+            // visible on screen it should be height divided by 20.
             var desiredUnitSize = heightInMeters / 20;
             
-            // find the closest lower unit size that starts from 5 or 10 in km
+            // find the closest higher "convenient" unit size (1,5,10,50,100...)
+            var multipliers = new[] { 5, 2 };
             var unitSize = 0.1;
             var diff = desiredUnitSize - unitSize;
-            while (true)
+            while (diff > 0)
             {
-                if (diff <= 0.1)
+                foreach (var multiplier in multipliers)
                 {
-                    break;
+                    if (diff <= 0)
+                        break;
+                    
+                    unitSize *= multiplier;
+                    diff = desiredUnitSize - unitSize;
                 }
-                
-                var nextUnitSize = unitSize * 5;
-                var nextDiff = desiredUnitSize - nextUnitSize;
-                diff = nextDiff;
-                unitSize = nextUnitSize;
-                if (diff <= 0.1)
-                {
-                    break;
-                }
-
-                nextUnitSize = unitSize * 2;
-                nextDiff = desiredUnitSize - nextUnitSize;
-
-                diff = nextDiff;
-                unitSize = nextUnitSize;
             }
 
             // assume that distance units on maps are even (not entirely true because of surface curvature) and find
             // pixel unit we want to use
             var unitSizeInPixels = unitSize /  (heightInMeters / Overlay.Control.Height);
 
-            return (unitSize, Convert.ToInt32(unitSizeInPixels));
+            return (unitSize, unitSizeInPixels);
         }
     }
 }
