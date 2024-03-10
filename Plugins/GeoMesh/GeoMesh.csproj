@@ -47,6 +47,7 @@
     </ItemGroup>
     <ItemGroup>
         <Compile Include="GeoMeshPlugin.cs" />
+        <Compile Include="GeoMeshSettings.cs" />
         <Compile Include="GMapMarkerGeoMesh.cs" />
         <Compile Include="GMapMarkerGeoMesh2.cs" />
         <Compile Include="Properties\AssemblyInfo.cs"/>
