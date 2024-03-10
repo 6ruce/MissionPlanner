@@ -42,7 +42,9 @@ namespace GeoMesh
 
         public override bool Loop()
         {
-            if (Math.Abs(_lastZoom - FlightData.instance.gMapControl1.Zoom) > 0.01)
+            double epsilon = double.Epsilon;
+
+            if (Math.Abs(_lastZoom - FlightData.instance.gMapControl1.Zoom) > epsilon)
             {
                 _currentUnitSize = CalculateUnitSize();
             }
@@ -50,7 +52,6 @@ namespace GeoMesh
             _meshOverlay.IsVisibile = _geoMeshSettings.Enabled;
             if (_geoMeshSettings.Enabled)
             {
-                double epsilon = double.Epsilon;
                 var meshLocation = Math.Abs(_geoMeshSettings.Latitude) > epsilon && Math.Abs(_geoMeshSettings.Longitude) > epsilon
                     ? new PointLatLng(_geoMeshSettings.Latitude, _geoMeshSettings.Longitude)
                     : new PointLatLng(Host.cs.Location.Lat, Host.cs.Location.Lng);

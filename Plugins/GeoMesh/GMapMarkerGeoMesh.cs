@@ -27,7 +27,7 @@ namespace GeoMesh
         public override void OnRender(IGraphics g)
         {
             var temp = g.Transform;
-            
+            g.TranslateTransform(LocalPosition.X, LocalPosition.Y);
             // Instead of calculating the angled lines coordinates we draw the vertical line and rotate the control
             // until we do a full 360 circle
             for (int i = 0; i < 18; i++)
