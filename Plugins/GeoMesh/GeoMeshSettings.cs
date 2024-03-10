@@ -18,9 +18,9 @@ namespace GeoMesh
 
         public bool Enabled => _meshVisibilityControl.Checked;
 
-        public float Latitude => _latitudeControl.Text != string.Empty ? float.Parse(_latitudeControl.Text) : 0;
+        public double Latitude => _latitudeControl.Text != string.Empty ? double.Parse(_latitudeControl.Text) : 0;
 
-        public float Longitude => _longtitudeControl.Text != string.Empty ? float.Parse(_longtitudeControl.Text) : 0;
+        public double Longitude => _longtitudeControl.Text != string.Empty ? double.Parse(_longtitudeControl.Text) : 0;
         
         public Color MeshColor => Color.FromName((string)_meshColor.SelectedItem);
 

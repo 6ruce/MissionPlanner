@@ -1,4 +1,5 @@
-﻿using GMap.NET;
+﻿using System;
+using GMap.NET;
 using GMap.NET.WindowsForms;
 using MissionPlanner.GCSViews;
 
@@ -42,7 +43,8 @@ namespace GeoMesh
             
             if (_geoMeshSettings.Enabled)
             {
-                var meshLocation = _geoMeshSettings.Latitude > 0 && _geoMeshSettings.Longitude > 0
+                double epsilon = double.Epsilon;
+                var meshLocation = Math.Abs(_geoMeshSettings.Latitude) > epsilon && Math.Abs(_geoMeshSettings.Longitude) > epsilon
                     ? new PointLatLng(_geoMeshSettings.Latitude, _geoMeshSettings.Longitude)
                     : new PointLatLng(Host.cs.Location.Lat, Host.cs.Location.Lng);
                 
