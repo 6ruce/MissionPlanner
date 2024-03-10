@@ -7,7 +7,10 @@ namespace GeoMesh
 {
     public class GeoMeshPlugin : MissionPlanner.Plugin.Plugin
     {
-
+        private double _lastZoom = -1;
+        private PointLatLng _lastLocation = PointLatLng.Empty;
+        private (double unitSize, double unitSizeInPixels) _currentUnitSize = default;
+        
         private GMapOverlay _meshOverlay;
         private GeoMeshSettings _geoMeshSettings;
 
@@ -39,8 +42,12 @@ namespace GeoMesh
 
         public override bool Loop()
         {
-            _meshOverlay.IsVisibile = _geoMeshSettings.Enabled;
+            if (Math.Abs(_lastZoom - FlightData.instance.gMapControl1.Zoom) > 0.01)
+            {
+                _currentUnitSize = CalculateUnitSize();
+            }
             
+            _meshOverlay.IsVisibile = _geoMeshSettings.Enabled;
             if (_geoMeshSettings.Enabled)
             {
                 double epsilon = double.Epsilon;
@@ -49,7 +56,11 @@ namespace GeoMesh
                     : new PointLatLng(Host.cs.Location.Lat, Host.cs.Location.Lng);
                 
                 // The thing that know how to render the mesh itself
-                var geoMeshMarker = new GMapMarkerGeoMesh(meshLocation, _geoMeshSettings.MeshColor);
+                var geoMeshMarker = new GMapMarkerGeoMesh(
+                    meshLocation,
+                    _geoMeshSettings.MeshColor,
+                    _currentUnitSize.unitSize,
+                    _currentUnitSize.unitSizeInPixels);
             
                 // Marker should be re-added each iteration to update its position
                 _meshOverlay?.Markers.Clear();
@@ -59,6 +70,40 @@ namespace GeoMesh
             return base.Loop();
         }
 
+        private (double unitSize, double unitSizeInPixels) CalculateUnitSize()
+        {
+            //calculate visible distance in meters on screen between center bottom and center top point
+            double heightInMeters =
+                (_meshOverlay.Control.MapProvider.Projection.GetDistance(_meshOverlay.Control.FromLocalToLatLng(_meshOverlay.Control.Width / 2, 0),
+                    _meshOverlay.Control.FromLocalToLatLng(_meshOverlay.Control.Width / 2, _meshOverlay.Control.Height)) * 1000.0);
+
+            // calculate the desired unit size - distance between two adjacent circles if we want to have ten circles
+            // visible on screen it should be height divided by 20.
+            var desiredUnitSize = heightInMeters / 20;
+            
+            // find the closest higher "convenient" unit size (1,5,10,50,100...)
+            var multipliers = new[] { 5, 2 };
+            var unitSize = 0.1;
+            var diff = desiredUnitSize - unitSize;
+            while (diff > 0)
+            {
+                foreach (var multiplier in multipliers)
+                {
+                    if (diff <= 0)
+                        break;
+                    
+                    unitSize *= multiplier;
+                    diff = desiredUnitSize - unitSize;
+                }
+            }
+
+            // assume that distance units on maps are even (not entirely true because of surface curvature) and find
+            // pixel unit we want to use
+            var unitSizeInPixels = unitSize /  (heightInMeters / _meshOverlay.Control.Height);
+
+            return (unitSize, unitSizeInPixels);
+        }
+        
         public override bool Exit()
         {
             return true;
