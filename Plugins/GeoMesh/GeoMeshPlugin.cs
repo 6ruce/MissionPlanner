@@ -47,6 +47,7 @@ namespace GeoMesh
             if (Math.Abs(_lastZoom - FlightData.instance.gMapControl1.Zoom) > epsilon)
             {
                 _currentUnitSize = CalculateUnitSize();
+                _lastZoom = FlightData.instance.gMapControl1.Zoom;
             }
             
             _meshOverlay.IsVisibile = _geoMeshSettings.Enabled;

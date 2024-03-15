@@ -21,6 +21,9 @@ namespace GeoMesh
             _meshColor = meshColor;
             _unitSize = unitSize;
             _unitSizeInPixels = unitSizeInPixels;
+
+            IsVisible = true;
+            Position = pos;
             Size = new Size(2 * _radius, 2 * _radius);
         }
 
