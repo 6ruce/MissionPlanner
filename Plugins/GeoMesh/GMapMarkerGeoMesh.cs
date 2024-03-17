@@ -62,13 +62,25 @@ namespace GeoMesh
             g.TranslateTransform(LocalPosition.X, LocalPosition.Y);
             
             g.Transform = temp;
+
             
+            DrawUnitSizeString(g);
+        }
+
+        private void DrawUnitSizeString(IGraphics g)
+        {
+            // Calculate and fill the rect in the map right bottom corner.
+            RectangleF rect = new RectangleF(
+                Overlay.Control.Width / 2 - 200,
+                Overlay.Control.Height / 2 - 40,
+                200,
+                40);
+            g.FillRectangle(Brushes.Black, rect);
             g.DrawString(
-                $"Current unit size: {_unitSize} meters",
-                new Font("Arial", 12),
+                $"Current mesh unit size: {_unitSize} meters",
+                new Font("Arial", 10),
                 new SolidBrush(_meshColor),
-                0,
-                0);
+                rect);
         }
 
         private void DrawMeshCircle(int radius, float penWidth, IGraphics g)
