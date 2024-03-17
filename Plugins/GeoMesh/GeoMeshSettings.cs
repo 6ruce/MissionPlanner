@@ -3,6 +3,7 @@ using System.Collections.Generic;
 using System.Linq;
 using System.Windows.Forms;
 using System.Drawing;
+using MissionPlanner.Utilities;
 using Color = System.Drawing.Color;
 using Point = System.Drawing.Point;
 using Size = System.Drawing.Size;
@@ -16,7 +17,7 @@ namespace GeoMesh
         private readonly CheckBox _meshVisibilityControl = new CheckBox();
         private readonly TextBox _longtitudeControl = new TextBox();
         private readonly TextBox _latitudeControl = new TextBox();
-        private readonly ComboBox _meshColor = new ComboBox();
+        private readonly ComboBox _meshColorControl = new ComboBox();
         private readonly Label _errorNotification = new Label();
         private readonly List<string> _errorMessages = new List<string>();
 
@@ -26,7 +27,7 @@ namespace GeoMesh
 
         public double Longitude { get; private set; }
 
-        public Color MeshColor => Color.FromName((string)_meshColor.SelectedItem);
+        public Color MeshColor { get; private set; } = Color.Red;
 
         public void Load()
         {
@@ -37,10 +38,12 @@ namespace GeoMesh
             tabControls.Clear();
             copiedTabControls.Insert(3, tabGeoMesh);
             copiedTabControls.ForEach(tabControls.Add);
-            
+
+
             _meshVisibilityControl.Text = "Mesh visibility";
             _meshVisibilityControl.Location = new Point(10, 10);
-            _meshVisibilityControl.Checked = true;
+            _meshVisibilityControl.Checked = bool.Parse(Settings.Instance["geomesh_enabled"] ?? "false");;
+            _meshVisibilityControl.CheckedChanged += (sender, args) => Settings.Instance["geomesh_enabled"] = _meshVisibilityControl.Checked.ToString();
             tabGeoMesh.Controls.Add(_meshVisibilityControl);
             
             var meshPositionLabel = new Label();
@@ -55,11 +58,12 @@ namespace GeoMesh
             latitudeLabel.Size = new Size(120, 20);
             tabGeoMesh.Controls.Add(latitudeLabel);
 
-            _latitudeControl.Text = "0";
+            _latitudeControl.Text = Settings.Instance["geomesh_pos_lat"] ?? "0";
             _latitudeControl.Location = new Point(145, 55);
             _latitudeControl.Size = new Size(50, 20);
             _latitudeControl.TextChanged += LatitudeTextChanged;
             _subscriptions.Add(() => _latitudeControl.TextChanged -= LatitudeTextChanged);
+            Latitude = double.Parse(_latitudeControl.Text);
             tabGeoMesh.Controls.Add(_latitudeControl);
             
             var longtitudeLabel = new Label();
@@ -68,11 +72,12 @@ namespace GeoMesh
             longtitudeLabel.Size = new Size(120, 20);
             tabGeoMesh.Controls.Add(longtitudeLabel);
 
-            _longtitudeControl.Text = "0";
+            _longtitudeControl.Text = Settings.Instance["geomesh_pos_long"] ?? "0";
             _longtitudeControl.Location = new Point(145, 75);
             _longtitudeControl.Size = new Size(50, 20);
             _longtitudeControl.TextChanged += LongitudeTextChanged;
-            _subscriptions.Add(() => _longtitudeControl.TextChanged += LongitudeTextChanged);
+            _subscriptions.Add(() => _longtitudeControl.TextChanged -= LongitudeTextChanged);
+            Longitude = double.Parse(_longtitudeControl.Text);
             tabGeoMesh.Controls.Add(_longtitudeControl);
             
             var meshColorLabel = new Label();
@@ -81,14 +86,20 @@ namespace GeoMesh
             meshColorLabel.Size = new Size(130, 20);
             tabGeoMesh.Controls.Add(meshColorLabel);
             
-            _meshColor.DataSource = Enum.GetNames(typeof(KnownColor));
-            _meshColor.Location = new Point(140, 95);
-            _meshColor.DrawMode = DrawMode.OwnerDrawFixed;
-            _meshColor.DropDownStyle = ComboBoxStyle.DropDownList;
-            _meshColor.FormattingEnabled = true;
-            _meshColor.DrawItem += OnDrawMeshColorItem;
-            _subscriptions.Add(() => _meshColor.DrawItem -= OnDrawMeshColorItem);
-            tabGeoMesh.Controls.Add(_meshColor);
+            _meshColorControl.DataSource = Enum.GetNames(typeof(KnownColor));
+            _meshColorControl.BindingContext = new BindingContext();
+            _meshColorControl.Location = new Point(140, 95);
+            _meshColorControl.SelectedIndex =
+                _meshColorControl.FindStringExact(Settings.Instance["geomesh_color"] ?? nameof(KnownColor.Red));
+            _meshColorControl.DrawMode = DrawMode.OwnerDrawFixed;
+            _meshColorControl.DropDownStyle = ComboBoxStyle.DropDownList;
+            _meshColorControl.FormattingEnabled = true;
+            _meshColorControl.SelectedValueChanged += OnMeshColorChange;
+            _subscriptions.Add(() => _meshColorControl.SelectedValueChanged -= OnMeshColorChange);
+            _meshColorControl.DrawItem += OnDrawMeshColorControlItem;
+            _subscriptions.Add(() => _meshColorControl.DrawItem -= OnDrawMeshColorControlItem);
+            MeshColor = Color.FromName(_meshColorControl.SelectedItem.ToString());
+            tabGeoMesh.Controls.Add(_meshColorControl);
             
             _errorNotification.Location = new Point(10, 120);
             _errorNotification.ForeColor = Color.Red;
@@ -124,14 +135,22 @@ namespace GeoMesh
         private void LatitudeTextChanged(object sender, EventArgs args)
         {
             Latitude = ExtractCoordinate(_latitudeControl, "Error: Invalid latitude. Valid range is [-90, 90)", -90, 90);
+            Settings.Instance["geomesh_pos_lat"] = Latitude.ToString();
         }
 
         private void LongitudeTextChanged(object sender, EventArgs args)
         {
             Longitude = ExtractCoordinate(_longtitudeControl, "Error: Invalid longtitude. Valid range is [-180, 180)", -180, 180);
+            Settings.Instance["geomesh_pos_long"] = Longitude.ToString();
+        }
+
+        private void OnMeshColorChange(object sender, EventArgs args)
+        {
+            MeshColor = Color.FromName((string)_meshColorControl.SelectedItem);
+            Settings.Instance["geomesh_color"] = _meshColorControl.SelectedItem.ToString();
         }
         
-        private void OnDrawMeshColorItem(object sender, DrawItemEventArgs e)
+        private void OnDrawMeshColorControlItem(object sender, DrawItemEventArgs e)
         {
             if (e.Index < 0)
                 return;
@@ -141,23 +160,23 @@ namespace GeoMesh
             Brush brush = null;
 
             if ((e.State & DrawItemState.Selected) == 0)
-                brush = new SolidBrush(_meshColor.BackColor);
+                brush = new SolidBrush(_meshColorControl.BackColor);
             else
                 brush = SystemBrushes.Highlight;
 
             g.FillRectangle(brush, rect);
 
-            brush = new SolidBrush(Color.FromName((string)_meshColor.Items[e.Index]));
+            brush = new SolidBrush(Color.FromName((string)_meshColorControl.Items[e.Index]));
 
             g.FillRectangle(brush, rect.X + 2, rect.Y + 2, 30, rect.Height - 4);
             g.DrawRectangle(Pens.Black, rect.X + 2, rect.Y + 2, 30, rect.Height - 4);
 
             if ((e.State & DrawItemState.Selected) == 0)
-                brush = new SolidBrush(_meshColor.ForeColor);
+                brush = new SolidBrush(_meshColorControl.ForeColor);
             else
                 brush = SystemBrushes.HighlightText;
-            g.DrawString(_meshColor.Items[e.Index].ToString(),
-                _meshColor.Font, brush, rect.X + 35, rect.Top + rect.Height - _meshColor.Font.Height);
+            g.DrawString(_meshColorControl.Items[e.Index].ToString(),
+                _meshColorControl.Font, brush, rect.X + 35, rect.Top + rect.Height - _meshColorControl.Font.Height);
         }
     }
 }

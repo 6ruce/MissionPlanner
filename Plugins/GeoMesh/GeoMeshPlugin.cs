@@ -24,7 +24,7 @@ namespace GeoMesh
             // Separate overlay to hold the mesh. It's addede specifically to gMapControl1 as it represents the map 
             // control that works during the flight.
             _meshOverlay = new GMapOverlay("geoMesh");
-            FlightData.instance.gMapControl1.Overlays.Add(_meshOverlay);
+            FlightData.instance.gMapControl1.Overlays.Insert(0, _meshOverlay);
 
             // Frequency of the loop iterations
             loopratehz = 1f;
