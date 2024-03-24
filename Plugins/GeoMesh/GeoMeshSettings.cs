@@ -3,6 +3,7 @@ using System.Collections.Generic;
 using System.Linq;
 using System.Windows.Forms;
 using System.Drawing;
+using System.Windows.Threading;
 using MissionPlanner.Utilities;
 using Color = System.Drawing.Color;
 using Point = System.Drawing.Point;
@@ -20,6 +21,8 @@ namespace GeoMesh
         private readonly ComboBox _meshColorControl = new ComboBox();
         private readonly Label _errorNotification = new Label();
         private readonly List<string> _errorMessages = new List<string>();
+        private Dispatcher _initDispatcher;
+        private TabPage _tabGeoMesh;
 
         public bool Enabled => _meshVisibilityControl.Checked;
 
@@ -31,32 +34,51 @@ namespace GeoMesh
 
         public void Load()
         {
-            var tabGeoMesh = new TabPage();
-            tabGeoMesh.Text = "GeoMesh";
             var tabControls = MissionPlanner.MainV2.instance.FlightData.tabControlactions.Controls;
-            var copiedTabControls = tabControls.OfType<Control>().ToList();
-            tabControls.Clear();
-            copiedTabControls.Insert(3, tabGeoMesh);
-            copiedTabControls.ForEach(tabControls.Add);
+            if (tabControls.OfType<TabPage>().Any(tab => tab.Text == "GeoMesh"))
+            {
+                return;
+            }
 
+            var copiedTabControls = tabControls.OfType<Control>().ToList();
+            // Readding GeoMesh tab if the sidebar control got modified
+            if (_initDispatcher != null)
+            {
+                _initDispatcher.Invoke(() =>
+                {
+                    tabControls.Clear();
+                    copiedTabControls.Insert(3, _tabGeoMesh);
+                    copiedTabControls.ForEach(tabControls.Add);
+                });
+
+                return;
+            }
+
+            _initDispatcher = Dispatcher.CurrentDispatcher;
+
+            _tabGeoMesh = new TabPage();
+            _tabGeoMesh.Text = "GeoMesh";
+            tabControls.Clear();
+            copiedTabControls.Insert(3, _tabGeoMesh);
+            copiedTabControls.ForEach(tabControls.Add);
 
             _meshVisibilityControl.Text = "Mesh visibility";
             _meshVisibilityControl.Location = new Point(10, 10);
             _meshVisibilityControl.Checked = bool.Parse(Settings.Instance["geomesh_enabled"] ?? "false");;
             _meshVisibilityControl.CheckedChanged += (sender, args) => Settings.Instance["geomesh_enabled"] = _meshVisibilityControl.Checked.ToString();
-            tabGeoMesh.Controls.Add(_meshVisibilityControl);
+            _tabGeoMesh.Controls.Add(_meshVisibilityControl);
             
             var meshPositionLabel = new Label();
             meshPositionLabel.Text = "Mesh position:";
             meshPositionLabel.Location = new Point(10, 35);
             meshPositionLabel.Size = new Size(150, 20);
-            tabGeoMesh.Controls.Add(meshPositionLabel);
+            _tabGeoMesh.Controls.Add(meshPositionLabel);
             
             var latitudeLabel = new Label();
             latitudeLabel.Text = "Latitude:";
             latitudeLabel.Location = new Point(20, 55);
             latitudeLabel.Size = new Size(120, 20);
-            tabGeoMesh.Controls.Add(latitudeLabel);
+            _tabGeoMesh.Controls.Add(latitudeLabel);
 
             _latitudeControl.Text = Settings.Instance["geomesh_pos_lat"] ?? "0";
             _latitudeControl.Location = new Point(145, 55);
@@ -64,13 +86,13 @@ namespace GeoMesh
             _latitudeControl.TextChanged += LatitudeTextChanged;
             _subscriptions.Add(() => _latitudeControl.TextChanged -= LatitudeTextChanged);
             Latitude = double.Parse(_latitudeControl.Text);
-            tabGeoMesh.Controls.Add(_latitudeControl);
+            _tabGeoMesh.Controls.Add(_latitudeControl);
             
             var longtitudeLabel = new Label();
             longtitudeLabel.Text = "Longtitude:";
             longtitudeLabel.Location = new Point(20, 75);
             longtitudeLabel.Size = new Size(120, 20);
-            tabGeoMesh.Controls.Add(longtitudeLabel);
+            _tabGeoMesh.Controls.Add(longtitudeLabel);
 
             _longtitudeControl.Text = Settings.Instance["geomesh_pos_long"] ?? "0";
             _longtitudeControl.Location = new Point(145, 75);
@@ -78,13 +100,13 @@ namespace GeoMesh
             _longtitudeControl.TextChanged += LongitudeTextChanged;
             _subscriptions.Add(() => _longtitudeControl.TextChanged -= LongitudeTextChanged);
             Longitude = double.Parse(_longtitudeControl.Text);
-            tabGeoMesh.Controls.Add(_longtitudeControl);
+            _tabGeoMesh.Controls.Add(_longtitudeControl);
             
             var meshColorLabel = new Label();
             meshColorLabel.Text = "Mesh color:";
             meshColorLabel.Location = new Point(10, 95);
             meshColorLabel.Size = new Size(130, 20);
-            tabGeoMesh.Controls.Add(meshColorLabel);
+            _tabGeoMesh.Controls.Add(meshColorLabel);
             
             _meshColorControl.DataSource = Enum.GetNames(typeof(KnownColor));
             _meshColorControl.BindingContext = new BindingContext();
@@ -99,14 +121,15 @@ namespace GeoMesh
             _meshColorControl.DrawItem += OnDrawMeshColorControlItem;
             _subscriptions.Add(() => _meshColorControl.DrawItem -= OnDrawMeshColorControlItem);
             MeshColor = Color.FromName(_meshColorControl.SelectedItem.ToString());
-            tabGeoMesh.Controls.Add(_meshColorControl);
+            _tabGeoMesh.Controls.Add(_meshColorControl);
             
             _errorNotification.Location = new Point(10, 120);
             _errorNotification.ForeColor = Color.Red;
             _errorNotification.Size = new Size(250, 20);
             _errorNotification.AutoSize = true;
-            tabGeoMesh.Controls.Add(_errorNotification);
-            
+            _tabGeoMesh.Controls.Add(_errorNotification);
+
+            MissionPlanner.MainV2.instance.FlightData.tabControlactions.Refresh();
         }
         
         public void Dispose() => _subscriptions.Dispose();

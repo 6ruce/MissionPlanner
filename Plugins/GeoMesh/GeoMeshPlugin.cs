@@ -42,6 +42,9 @@ namespace GeoMesh
 
         public override bool Loop()
         {
+            // Loading on each loop as tab contol could be updated by a user and tabs readded without us 
+            // so we have to return back again. Load won't do anything if tab is already there.
+            _geoMeshSettings.Load();
             double epsilon = double.Epsilon;
 
             if (Math.Abs(_lastZoom - FlightData.instance.gMapControl1.Zoom) > epsilon)
